@@ -7,10 +7,10 @@ app = Flask(__name__)
 
 # تنظیمات اتصال به پایگاه داده
 db_config = {
-    'host': 'localhost',
-    'user': 'your_username',
-    'password': 'your_password',
-    'database': 'students_db'
+    'host': 'tirich-mir.liara.cloud:34301',
+    'user': 'root',
+    'password': 'zGPKrmtQf2t66nGzlgDeoxj7',
+    'database': 'determined_hawking'
 }
 
 def create_connection():
