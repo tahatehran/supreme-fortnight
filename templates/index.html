@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(180deg, #E0F7FA 0%, #80DEEA 100%);
+        }
+        header, footer {
+            background-color: #0288D1;
+            color: white;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <header class="p-4 shadow-md">
+        <h1 class="text-3xl font-bold">Project Student</h1>
+        <p class="text-lg">Project by Taha Tehrani Nasab</p>
+    </header>
+
+    <main class="flex-grow container mx-auto p-4">
+        <p class="text-xl mb-4">Please choose an option:</p>
+        <ul class="space-y-4">
+            <li>
+                <a href="/students" class="text-blue-600 hover:underline">All Student List</a>
+            </li>
+            <li>
+                <form action="/student" method="POST" class="bg-white p-4 rounded shadow-md">
+                    <label for="id" class="block text-lg mb-2">Student Search ID:</label>
+                    <input type="number" name="id" required class="w-full p-2 mb-4 border rounded">
+                    <input type="submit" value="Submit" class="bg-blue-600 text-white p-2 rounded">
+                </form>
+            </li>
+            <li>
+                <form action="/add_student" method="POST" class="bg-white p-4 rounded shadow-md">
+                    <label for="name" class="block text-lg mb-2">Name:</label>
+                    <input type="text" name="name" required class="w-full p-2 mb-4 border rounded">
+                    <label for="lastname" class="block text-lg mb-2">Lastname:</label>
+                    <input type="text" name="lastname" required class="w-full p-2 mb-4 border rounded">
+                    <label for="age" class="block text-lg mb-2">Age:</label>
+                    <input type="number" name="age" required class="w-full p-2 mb-4 border rounded">
+                    <input type="submit" value="Add Student" class="bg-blue-600 text-white p-2 rounded">
+                </form>
+            </li>
+        </ul>
+    </main>
+
+    <footer class="p-4 shadow-md mt-auto">
+        <p class="text-center">حقوق برای طاها تهرانی نسب می‌باشد.</p>
+    </footer>
+
+</body>
+</html>
