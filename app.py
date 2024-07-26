@@ -2,15 +2,26 @@ from flask import Flask, jsonify, request, render_template, abort
 import mysql.connector
 from mysql.connector import Error
 import sys
+import logging
+import os
 
 app = Flask(__name__)
 
+# تنظیم logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger(__name__)
+
 # تنظیمات اتصال به پایگاه داده
 db_config = {
-    'host': 'tirich-mir.liara.cloud:34301',
-    'user': 'root',
-    'password': 'zGPKrmtQf2t66nGzlgDeoxj7',
-    'database': 'determined_hawking'
+    'host': os.environ.get('DB_HOST', 'tirich-mir.liara.cloud'),
+    'port': int(os.environ.get('DB_PORT', 34301)),
+    'user': os.environ.get('DB_USER', 'root'),
+    'password': os.environ.get('DB_PASSWORD', 'zGPKrmtQf2t66nGzlgDeoxj7'),
+    'database': os.environ.get('DB_NAME', 'determined_hawking')
 }
 
 def create_connection():
@@ -18,17 +29,17 @@ def create_connection():
         connection = mysql.connector.connect(**db_config)
         return connection
     except Error as e:
-        print(f"Error connecting to MySQL: {e}")
+        logger.error(f"Error connecting to MySQL: {e}")
         return None
 
 def check_database_connection():
     connection = create_connection()
     if connection:
-        print("Successfully connected to the database.")
+        logger.info("Successfully connected to the database.")
         connection.close()
         return True
     else:
-        print("Failed to connect to the database. Exiting...")
+        logger.error("Failed to connect to the database.")
         return False
 
 @app.route('/')
@@ -52,9 +63,11 @@ def get_all_students():
 
         return jsonify(students), 200
     except mysql.connector.Error as err:
-        return jsonify({'error': f'Database error: {err}'}), 500
+        logger.error(f"Database error: {err}")
+        return jsonify({'error': 'Database error occurred'}), 500
     except Exception as e:
-        return jsonify({'error': f'Unexpected error: {str(e)}'}), 500
+        logger.error(f"Unexpected error: {str(e)}")
+        return jsonify({'error': 'An unexpected error occurred'}), 500
 
 @app.route('/student', methods=['POST'])
 def get_student_by_id():
@@ -85,9 +98,11 @@ def get_student_by_id():
         else:
             return jsonify({'error': 'Student not found'}), 404
     except mysql.connector.Error as err:
-        return jsonify({'error': f'Database error: {err}'}), 500
+        logger.error(f"Database error: {err}")
+        return jsonify({'error': 'Database error occurred'}), 500
     except Exception as e:
-        return jsonify({'error': f'Unexpected error: {str(e)}'}), 500
+        logger.error(f"Unexpected error: {str(e)}")
+        return jsonify({'error': 'An unexpected error occurred'}), 500
 
 @app.route('/add_student', methods=['POST'])
 def add_student():
@@ -128,12 +143,14 @@ def add_student():
         return jsonify(new_student), 201
 
     except mysql.connector.Error as err:
-        return jsonify({'error': f'Database error: {err}'}), 500
+        logger.error(f"Database error: {err}")
+        return jsonify({'error': 'Database error occurred'}), 500
     except Exception as e:
-        return jsonify({'error': f'Unexpected error: {str(e)}'}), 500
+        logger.error(f"Unexpected error: {str(e)}")
+        return jsonify({'error': 'An unexpected error occurred'}), 500
 
 if __name__ == '__main__':
     if check_database_connection():
-        app.run(debug=True)
+        app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
     else:
         sys.exit(1)
