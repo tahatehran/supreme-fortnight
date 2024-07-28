@@ -17,11 +17,11 @@ logger = logging.getLogger(__name__)
 
 # تنظیمات اتصال به پایگاه داده
 db_config = {
-    'host': os.environ.get('DB_HOST', 'tirich-mir.liara.cloud'),
-    'port': int(os.environ.get('DB_PORT', 34301)),
-    'user': os.environ.get('DB_USER', 'root'),
-    'password': os.environ.get('DB_PASSWORD', 'zGPKrmtQf2t66nGzlgDeoxj7'),
-    'database': os.environ.get('DB_NAME', 'determined_hawking')
+    'host': os.environ.get('DB_HOST', 'localhost'),
+    'port': int(os.environ.get('DB_PORT', 3306)),
+    'user': os.environ.get('DB_USER', 'taha'),
+    'password': os.environ.get('DB_PASSWORD', 'Taha1382'),
+    'database': os.environ.get('DB_NAME', 'tahadb')
 }
 
 def create_connection():
