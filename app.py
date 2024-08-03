@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 db_config = {
     'host': os.environ.get('DB_HOST', 'localhost'),
     'port': int(os.environ.get('DB_PORT', 3306)),
-    'user': os.environ.get('DB_USER', 'taha'),
+    'user': os.environ.get('DB_USER', 'tahatehrani'),
     'password': os.environ.get('DB_PASSWORD', 'Taha1382'),
     'database': os.environ.get('DB_NAME', 'tahadb')
 }
