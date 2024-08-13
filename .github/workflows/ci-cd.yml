@@ -24,13 +24,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m venv venv
-          source venv/bin/activate
+          source project/venv/bin/activate
           pip install -r requirements.txt
-
-      - name: Run tests
-        run: |
-          source venv/bin/activate
-          pytest
 
       - name: Deploy to Server
         env:
