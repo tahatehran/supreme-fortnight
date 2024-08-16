@@ -24,7 +24,7 @@ db_config = {
     'password': os.environ.get('DB_PASSWORD', 'PASWORD_DATA'),  # رمز عبور پایگاه داده
     'database': os.environ.get('DB_NAME', 'NAME_DATA')  # نام پایگاه داده
 }
-
+#کلاس پایگاه داده
 class Database:
     def __init__(self, config):
         self.config = config
@@ -50,6 +50,7 @@ class Database:
 
 db = Database(db_config)
 
+#کلاس ارور ها
 class ErrorHandler:
     @staticmethod
     def handle_database_error(err):
