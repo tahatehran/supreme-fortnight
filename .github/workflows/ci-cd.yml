@@ -27,11 +27,18 @@ jobs:
           source venv/bin/activate
           pip install -r requirements.txt
 
+      - name: Set up SSH
+        run: |
+          eval "$(ssh-agent -s)"  # Start SSH Agent
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' | ssh-add -    # Add the private key to the agent
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
       - name: Deploy to Server
         env:
           SERVER_IP: ${{ secrets.SERVER_IP }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
-          echo "${SSH_PRIVATE_KEY}" | tr -d '\r' | ssh-add - > /dev/null
           ssh -o StrictHostKeyChecking=no ${{ env.SERVER_USER }}@${{ env.SERVER_IP }} "cd /home/ubuntu/project && git pull && ./deploy.sh"
