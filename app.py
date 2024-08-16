@@ -45,6 +45,8 @@ def check_database_connection():
 @app.route('/')
 def index():
     return render_template('index.html')
+    
+#برای دیدن اطلاعات دانشجو
 
 @app.route('/students', methods=['GET'])
 def get_all_students():
@@ -68,6 +70,9 @@ def get_all_students():
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return jsonify({'error': 'An unexpected error occurred'}), 500
+
+
+# جستجو بر اساس ایدی با استفاده از متد post
 
 @app.route('/student', methods=['POST'])
 def get_student_by_id():
@@ -103,6 +108,8 @@ def get_student_by_id():
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return jsonify({'error': 'An unexpected error occurred'}), 500
+
+#ایجاد دانشجو بر اساز سن و نام و نام خانوادگی همچنین دادن ایدی  خودکار  با متد  pos
 
 @app.route('/add_student', methods=['POST'])
 def add_student():
