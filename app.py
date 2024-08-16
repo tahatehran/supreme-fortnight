@@ -50,6 +50,17 @@ class Database:
 
 db = Database(db_config)
 
+class ErrorHandler:
+    @staticmethod
+    def handle_database_error(err):
+        logger.error(f"Database error: {err}")
+        return jsonify({'error': 'Database error occurred'}), 500
+
+    @staticmethod
+    def handle_unexpected_error(e):
+        logger.error(f"Unexpected error: {str(e)}")
+        return jsonify({'error': 'An unexpected error occurred'}), 500
+
 # صفحه اصلی
 @app.route('/')
 def index():
@@ -73,11 +84,9 @@ def get_all_students():
 
         return jsonify(students), 200
     except mysql.connector.Error as err:
-        logger.error(f"Database error: {err}")
-        return jsonify({'error': 'Database error occurred'}), 500
+        return ErrorHandler.handle_database_error(err)
     except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
-        return jsonify({'error': 'An unexpected error occurred'}), 500
+        return ErrorHandler.handle_unexpected_error(e)
 
 # جستجو بر اساس ایدی با استفاده از متد POST
 @app.route('/student', methods=['POST'])
@@ -109,11 +118,9 @@ def get_student_by_id():
         else:
             return jsonify({'error': 'Student not found'}), 404
     except mysql.connector.Error as err:
-        logger.error(f"Database error: {err}")
-        return jsonify({'error': 'Database error occurred'}), 500
+        return ErrorHandler.handle_database_error(err)
     except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
-        return jsonify({'error': 'An unexpected error occurred'}), 500
+        return ErrorHandler.handle_unexpected_error(e)
 
 # ایجاد دانشجو بر اساس سن و نام و نام خانوادگی همچنین دادن ایدی خودکار با متد POST
 @app.route('/add_student', methods=['POST'])
@@ -154,11 +161,9 @@ def add_student():
         return jsonify(new_student), 201
 
     except mysql.connector.Error as err:
-        logger.error(f"Database error: {err}")
-        return jsonify({'error': 'Database error occurred'}), 500
+        return ErrorHandler.handle_database_error(err)
     except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
-        return jsonify({'error': 'An unexpected error occurred'}), 500
+        return ErrorHandler.handle_unexpected_error(e)
 
 # اجرای برنامه
 if __name__ == '__main__':
