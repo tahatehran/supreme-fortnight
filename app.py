@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template, abort
+from flask import Flask, jsonify, request, render_template
 import mysql.connector
 from mysql.connector import Error
 import sys
@@ -21,10 +21,10 @@ db_config = {
     'host': os.environ.get('DB_HOST', 'HOST_DATA'),  # آدرس میزبان پایگاه داده
     'port': int(os.environ.get('DB_PORT', 3306)),     # پورت پایگاه داده
     'user': os.environ.get('DB_USER', 'USER_DATA'),   # نام کاربری پایگاه داده
-    'password': os.environ.get('DB_PASSWORD', 'PASWORD_DATA'),  # رمز عبور پایگاه داده
+    'password': os.environ.get('DB_PASSWORD', 'PASSWORD_DATA'),  # رمز عبور پایگاه داده
     'database': os.environ.get('DB_NAME', 'NAME_DATA')  # نام پایگاه داده
 }
-#کلاس پایگاه داده
+
 class Database:
     def __init__(self, config):
         self.config = config
@@ -50,7 +50,6 @@ class Database:
 
 db = Database(db_config)
 
-#کلاس ارور ها
 class ErrorHandler:
     @staticmethod
     def handle_database_error(err):
@@ -62,6 +61,18 @@ class ErrorHandler:
         logger.error(f"Unexpected error: {str(e)}")
         return jsonify({'error': 'An unexpected error occurred'}), 500
 
+    @staticmethod
+    def handle_missing_fields():
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    @staticmethod
+    def handle_invalid_student_id():
+        return jsonify({'error': 'Invalid student ID'}), 400
+
+    @staticmethod
+    def handle_student_not_found():
+        return jsonify({'error': 'Student not found'}), 404
+
 # صفحه اصلی
 @app.route('/')
 def index():
@@ -72,9 +83,6 @@ def index():
 def get_all_students():
     try:
         connection = db.get_connection()  # دریافت اتصال به پایگاه داده
-        if not connection:
-            return jsonify({'error': 'Database connection failed'}), 500
-
         cursor = connection.cursor(dictionary=True)
         query = "SELECT * FROM students"
         cursor.execute(query)
@@ -92,20 +100,17 @@ def get_all_students():
 # جستجو بر اساس ایدی با استفاده از متد POST
 @app.route('/student', methods=['POST'])
 def get_student_by_id():
+    student_id = request.form.get('id')
+    if not student_id:
+        return ErrorHandler.handle_missing_fields()
+
     try:
-        student_id = request.form.get('id')
-        if not student_id:
-            return jsonify({'error': 'Student ID is required'}), 400
+        student_id = int(student_id)
+    except ValueError:
+        return ErrorHandler.handle_invalid_student_id()
 
-        try:
-            student_id = int(student_id)
-        except ValueError:
-            return jsonify({'error': 'Invalid student ID'}), 400
-
+    try:
         connection = db.get_connection()
-        if not connection:
-            return jsonify({'error': 'Database connection failed'}), 500
-
         cursor = connection.cursor(dictionary=True)
         query = "SELECT * FROM students WHERE id = %s"
         cursor.execute(query, (student_id,))
@@ -117,7 +122,7 @@ def get_student_by_id():
         if student:
             return jsonify(student), 200
         else:
-            return jsonify({'error': 'Student not found'}), 404
+            return ErrorHandler.handle_student_not_found()
     except mysql.connector.Error as err:
         return ErrorHandler.handle_database_error(err)
     except Exception as e:
@@ -126,23 +131,20 @@ def get_student_by_id():
 # ایجاد دانشجو بر اساس سن و نام و نام خانوادگی همچنین دادن ایدی خودکار با متد POST
 @app.route('/add_student', methods=['POST'])
 def add_student():
+    name = request.form.get('name')
+    lastname = request.form.get('lastname')
+    age = request.form.get('age')
+
+    if not name or not lastname or not age:
+        return ErrorHandler.handle_missing_fields()
+
     try:
-        name = request.form.get('name')
-        lastname = request.form.get('lastname')
-        age = request.form.get('age')
+        age = int(age)
+    except ValueError:
+        return ErrorHandler.handle_invalid_student_id()
 
-        if not name or not lastname or not age:
-            return jsonify({'error': 'Missing required fields'}), 400
-
-        try:
-            age = int(age)
-        except ValueError:
-            return jsonify({'error': 'Age must be a number'}), 400
-
+    try:
         connection = db.get_connection()
-        if not connection:
-            return jsonify({'error': 'Database connection failed'}), 500
-
         cursor = connection.cursor()
         query = "INSERT INTO students (name, lastname, age) VALUES (%s, %s, %s)"
         cursor.execute(query, (name, lastname, age))
