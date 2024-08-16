@@ -25,25 +25,30 @@ db_config = {
     'database': os.environ.get('DB_NAME', 'NAME_DATA')  # نام پایگاه داده
 }
 
-# تابع برای ایجاد اتصال به پایگاه داده
-def create_connection():
-    try:
-        connection = mysql.connector.connect(**db_config)  # تلاش برای اتصال به پایگاه داده
-        return connection
-    except Error as e:
-        logger.error(f"Error connecting to MySQL: {e}")  # ثبت خطا در صورت عدم موفقیت
-        return None
+class Database:
+    def __init__(self, config):
+        self.config = config
+        self.connection = None
 
-# تابع برای بررسی اتصال به پایگاه داده
-def check_database_connection():
-    connection = create_connection()
-    if connection:
-        logger.info("Successfully connected to the database.")  # ثبت موفقیت در اتصال
-        connection.close()
-        return True
-    else:
-        logger.error("Failed to connect to the database.")  # ثبت خطا در صورت عدم موفقیت
-        return False
+    def open_connection(self):
+        try:
+            self.connection = mysql.connector.connect(**self.config)
+            logger.info("Database connection opened.")
+        except Error as e:
+            logger.error(f"Error connecting to MySQL: {e}")
+            self.connection = None
+
+    def close_connection(self):
+        if self.connection:
+            self.connection.close()
+            logger.info("Database connection closed.")
+
+    def get_connection(self):
+        if self.connection is None or not self.connection.is_connected():
+            self.open_connection()
+        return self.connection
+
+db = Database(db_config)
 
 # صفحه اصلی
 @app.route('/')
@@ -54,92 +59,91 @@ def index():
 @app.route('/students', methods=['GET'])
 def get_all_students():
     try:
-        connection = create_connection()  # ایجاد اتصال به پایگاه داده
+        connection = db.get_connection()  # دریافت اتصال به پایگاه داده
         if not connection:
-            return jsonify({'error': 'Database connection failed'}), 500  # خطا در اتصال
+            return jsonify({'error': 'Database connection failed'}), 500
 
-        cursor = connection.cursor(dictionary=True)  # ایجاد یک کرسر برای اجرای کوئری
-        query = "SELECT * FROM students"  # کوئری برای دریافت تمام دانشجویان
+        cursor = connection.cursor(dictionary=True)
+        query = "SELECT * FROM students"
         cursor.execute(query)
-        students = cursor.fetchall()  # دریافت نتایج
+        students = cursor.fetchall()
         
         cursor.close()
-        connection.close()
+        db.close_connection()  # بستن اتصال
 
-        return jsonify(students), 200  # بازگشت نتایج به صورت JSON
+        return jsonify(students), 200
     except mysql.connector.Error as err:
-        logger.error(f"Database error: {err}")  # ثبت خطا در پایگاه داده
+        logger.error(f"Database error: {err}")
         return jsonify({'error': 'Database error occurred'}), 500
     except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")  # ثبت خطای غیرمنتظره
+        logger.error(f"Unexpected error: {str(e)}")
         return jsonify({'error': 'An unexpected error occurred'}), 500
 
 # جستجو بر اساس ایدی با استفاده از متد POST
 @app.route('/student', methods=['POST'])
 def get_student_by_id():
     try:
-        student_id = request.form.get('id')  # دریافت شناسه دانشجو از درخواست
+        student_id = request.form.get('id')
         if not student_id:
-            return jsonify({'error': 'Student ID is required'}), 400  # خطا در صورت عدم وجود شناسه
+            return jsonify({'error': 'Student ID is required'}), 400
 
         try:
-            student_id = int(student_id)  # تبدیل شناسه به عدد صحیح
+            student_id = int(student_id)
         except ValueError:
-            return jsonify({'error': 'Invalid student ID'}), 400  # خطا در صورت تبدیل ناموفق
+            return jsonify({'error': 'Invalid student ID'}), 400
 
-        connection = create_connection()  # ایجاد اتصال به پایگاه داده
+        connection = db.get_connection()
         if not connection:
-            return jsonify({'error': 'Database connection failed'}), 500  # خطا در اتصال
+            return jsonify({'error': 'Database connection failed'}), 500
 
-        cursor = connection.cursor(dictionary=True)  # ایجاد کرسر
-        query = "SELECT * FROM students WHERE id = %s"  # کوئری برای جستجوی دانشجو بر اساس شناسه
+        cursor = connection.cursor(dictionary=True)
+        query = "SELECT * FROM students WHERE id = %s"
         cursor.execute(query, (student_id,))
-        student = cursor.fetchone()  # دریافت نتیجه
+        student = cursor.fetchone()
         
         cursor.close()
-        connection.close()
+        db.close_connection()  # بستن اتصال
 
         if student:
-            return jsonify(student), 200  # بازگشت اطلاعات دانشجو
+            return jsonify(student), 200
         else:
-            return jsonify({'error': 'Student not found'}), 404  # خطا در صورت عدم وجود دانشجو
+            return jsonify({'error': 'Student not found'}), 404
     except mysql.connector.Error as err:
-        logger.error(f"Database error: {err}")  # ثبت خطا در پایگاه داده
+        logger.error(f"Database error: {err}")
         return jsonify({'error': 'Database error occurred'}), 500
     except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")  # ثبت خطای غیرمنتظره
+        logger.error(f"Unexpected error: {str(e)}")
         return jsonify({'error': 'An unexpected error occurred'}), 500
 
 # ایجاد دانشجو بر اساس سن و نام و نام خانوادگی همچنین دادن ایدی خودکار با متد POST
 @app.route('/add_student', methods=['POST'])
 def add_student():
     try:
-        name = request.form.get('name')  # دریافت نام دانشجو
-        lastname = request.form.get('lastname')  # دریافت نام خانوادگی دانشجو
-        age = request.form.get('age')  # دریافت سن دانشجو
+        name = request.form.get('name')
+        lastname = request.form.get('lastname')
+        age = request.form.get('age')
 
         if not name or not lastname or not age:
-            return jsonify({'error': 'Missing required fields'}), 400  # خطا در صورت عدم وجود فیلدهای ضروری
+            return jsonify({'error': 'Missing required fields'}), 400
 
         try:
-            age = int(age)  # تبدیل سن به عدد صحیح
+            age = int(age)
         except ValueError:
-            return jsonify({'error': 'Age must be a number'}), 400  # خطا در صورت تبدیل ناموفق
+            return jsonify({'error': 'Age must be a number'}), 400
 
-        connection = create_connection()  # ایجاد اتصال به پایگاه داده
+        connection = db.get_connection()
         if not connection:
-            return jsonify({'error': 'Database connection failed'}), 500  # خطا در اتصال
+            return jsonify({'error': 'Database connection failed'}), 500
 
-        cursor = connection.cursor()  # ایجاد کرسر
-        
-        query = "INSERT INTO students (name, lastname, age) VALUES (%s, %s, %s)"  # کوئری برای افزودن دانشجو
+        cursor = connection.cursor()
+        query = "INSERT INTO students (name, lastname, age) VALUES (%s, %s, %s)"
         cursor.execute(query, (name, lastname, age))
-        connection.commit()  # تأیید تغییرات
+        connection.commit()
         
-        new_id = cursor.lastrowid  # دریافت شناسه جدید دانشجو
+        new_id = cursor.lastrowid
         
         cursor.close()
-        connection.close()
+        db.close_connection()  # بستن اتصال
 
         new_student = {
             'id': new_id,
@@ -147,18 +151,18 @@ def add_student():
             'lastname': lastname,
             'age': age
         }
-        return jsonify(new_student), 201  # بازگشت اطلاعات دانشجوی جدید
+        return jsonify(new_student), 201
 
     except mysql.connector.Error as err:
-        logger.error(f"Database error: {err}")  # ثبت خطا در پایگاه داده
+        logger.error(f"Database error: {err}")
         return jsonify({'error': 'Database error occurred'}), 500
     except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")  # ثبت خطای غیرمنتظره
+        logger.error(f"Unexpected error: {str(e)}")
         return jsonify({'error': 'An unexpected error occurred'}), 500
 
 # اجرای برنامه
 if __name__ == '__main__':
-    if check_database_connection():  # بررسی اتصال به پایگاه داده
+    if db.get_connection():  # بررسی اتصال به پایگاه داده
         app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))  # اجرای برنامه
     else:
         sys.exit(1)  # خروج از برنامه در صورت عدم اتصال
