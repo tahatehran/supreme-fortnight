@@ -1,3 +1,5 @@
+#کتابخانه مورد نیاز حتما فایل requirements.txt را با دستور دانلود کنید 
+#کتابخانه فلسک
 from flask import Flask, jsonify, request, render_template
 import mysql.connector
 from mysql.connector import Error
