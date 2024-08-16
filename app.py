@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 # تنظیمات اتصال به پایگاه داده
 db_config = {
-    'host': os.environ.get('DB_HOST', 'localhost'),
+    'host': os.environ.get('DB_HOST', 'HOST_DATA'),
     'port': int(os.environ.get('DB_PORT', 3306)),
     'user': os.environ.get('DB_USER', 'USER_DATA'),
     'password': os.environ.get('DB_PASSWORD', 'PASWORD_DATA'),
