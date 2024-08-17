@@ -4,67 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سیستم مدیریت دانشجویان</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <style>
-        body {
-            background: linear-gradient(180deg, #E0F7FA 0%, #80DEEA 100%);
-            font-family: 'Vazir', 'Tahoma', sans-serif;
-        }
-        header, footer {
-            background-color: #0288D1;
-            color: white;
-        }
-        .form-input {
-            @apply w-full p-2 mb-4 border rounded;
-        }
-        .btn {
-            @apply bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition duration-300;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
-<body class="flex flex-col min-h-screen">
-    <header class="p-4 shadow-md text-center">
-        <h1 class="text-3xl font-bold">پروژه دانشجو</h1>
-        <p class="text-lg">پروژه توسط طاها تهرانی نسب</p>
-    </header>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-graduation-cap"></i> سیستم مدیریت دانشجویان</h1>
+            <p><i class="fas fa-user"></i> پروژه توسط طاها تهرانی نسب</p>
+        </header>
 
-    <main class="flex-grow container mx-auto p-4">
-        <p class="text-xl mb-4">لطفاً یک گزینه را انتخاب کنید:</p>
-        <div class="space-y-6">
-            <section>
-                <h2 class="text-2xl mb-2">لیست دانشجویان</h2>
-                <a href="/students" class="text-blue-600 hover:underline">مشاهده لیست تمام دانشجویان</a>
-            </section>
-
-            <section>
-                <h2 class="text-2xl mb-2">جستجوی دانشجو</h2>
-                <form action="/student" method="POST" class="bg-white p-4 rounded shadow-md">
-                    <label for="id" class="block text-lg mb-2">شناسه دانشجو:</label>
-                    <input type="number" id="id" name="id" required class="form-input">
-                    <button type="submit" class="btn">جستجو</button>
-                </form>
-            </section>
-
-            <section>
-                <h2 class="text-2xl mb-2">افزودن دانشجوی جدید</h2>
-                <form action="/add_student" method="POST" class="bg-white p-4 rounded shadow-md">
-                    <label for="name" class="block text-lg mb-2">نام:</label>
-                    <input type="text" id="name" name="name" required class="form-input">
-                    
-                    <label for="lastname" class="block text-lg mb-2">نام خانوادگی:</label>
-                    <input type="text" id="lastname" name="lastname" required class="form-input">
-                    
-                    <label for="age" class="block text-lg mb-2">سن:</label>
-                    <input type="number" id="age" name="age" required class="form-input">
-                    
-                    <button type="submit" class="btn">افزودن دانشجو</button>
-                </form>
-            </section>
-        </div>
-    </main>
-
-    <footer class="p-4 shadow-md mt-auto text-center">
-        <p>تمامی حقوق محفوظ است. &copy; ۱۴۰۳</p>
-    </footer>
+        <main>
+            <p class="intro">لطفاً یک گزینه را انتخاب کنید:</p>
+            <div class="options">
+                <div class="option">
+                    <a href="/students" class="btn">
+                        <i class="fas fa-list"></i>
+                        مشاهده لیست تمام دانشجویان
+                    </a>
+                </div>
+                <div class="option">
+                    <form action="/student" method="POST" class="search-form">
+                        <label for="id"><i class="fas fa-search"></i> جستجوی دانشجو:</label>
+                        <input type="number" id="id" name="id" required placeholder="شناسه دانشجو را وارد کنید">
+                        <button type="submit" class="btn">جستجو</button>
+                    </form>
+                </div>
+                <div class="option">
+                    <form action="/add_student" method="POST" class="add-form">
+                        <h3><i class="fas fa-user-plus"></i> افزودن دانشجوی جدید</h3>
+                        <div class="form-group">
+                            <label for="name"><i class="fas fa-user"></i> نام:</label>
+                            <input type="text" id="name" name="name" required placeholder="نام دانشجو">
+                        </div>
+                        <div class="form-group">
+                            <label for="lastname"><i class="fas fa-user"></i> نام خانوادگی:</label>
+                            <input type="text" id="lastname" name="lastname" required placeholder="نام خانوادگی دانشجو">
+                        </div>
+                        <div class="form-group">
+                            <label for="age"><i class="fas fa-birthday-cake"></i> سن:</label>
+                            <input type="number" id="age" name="age" required placeholder="سن دانشجو">
+                        </div>
+                        <button type="submit" class="btn">افزودن دانشجو</button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
 </body>
 </html>
