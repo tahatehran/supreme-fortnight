@@ -1,5 +1,5 @@
 #کتابخانه مورد نیاز حتما فایل requirements.txt را با دستور دانلود کنید 
-#کتابخانه فلسک
+# وارد کردن کتابخانه‌های مورد نیاز
 from flask import Flask, jsonify, request, render_template
 import mysql.connector
 from mysql.connector import Error
@@ -10,7 +10,7 @@ import os
 # ایجاد یک نمونه از برنامه Flask
 app = Flask(__name__)
 
-# تنظیم logging
+# تنظیم پیکربندی لاگینگ
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -20,41 +20,83 @@ logger = logging.getLogger(__name__)
 
 # تنظیمات اتصال به پایگاه داده
 db_config = {
-    'host': os.environ.get('DB_HOST', 'HOST_DATA'),  # آدرس میزبان پایگاه داده
-    'port': int(os.environ.get('DB_PORT', 3306)),     # پورت پایگاه داده
-    'user': os.environ.get('DB_USER', 'USER_DATA'),   # نام کاربری پایگاه داده
-    'password': os.environ.get('DB_PASSWORD', 'PASSWORD_DATA'),  # رمز عبور پایگاه داده
-    'database': os.environ.get('DB_NAME', 'NAME_DATA')  # نام پایگاه داده
+    'host': os.environ.get('DB_HOST', 'HOST_DATA'),
+    'port': int(os.environ.get('DB_PORT', 3306)),
+    'user': os.environ.get('DB_USER', 'USER_DATA'),
+    'password': os.environ.get('DB_PASSWORD', 'PASSWORD_DATA'),
+    'database': os.environ.get('DB_NAME', 'NAME_DATA')
 }
 
-
-#کلاس پایگاه داده 
+# کلاس مدیریت پایگاه داده
 class Database:
     def __init__(self, config):
         self.config = config
         self.connection = None
 
+    # باز کردن اتصال به پایگاه داده
     def open_connection(self):
         try:
-            self.connection = mysql.connector.connect(**self.config)
-            logger.info("Database connection opened.")
+            if self.connection is None or not self.connection.is_connected():
+                self.connection = mysql.connector.connect(**self.config)
+                logger.info("Database connection opened.")
         except Error as e:
             logger.error(f"Error connecting to MySQL: {e}")
             self.connection = None
 
+    # بستن اتصال پایگاه داده
     def close_connection(self):
-        if self.connection:
+        if self.connection and self.connection.is_connected():
             self.connection.close()
             logger.info("Database connection closed.")
 
-    def get_connection(self):
-        if self.connection is None or not self.connection.is_connected():
+    # اجرای کوئری SELECT
+    def execute_query(self, query, params=None):
+        try:
             self.open_connection()
-        return self.connection
+            cursor = self.connection.cursor(dictionary=True)
+            cursor.execute(query, params)
+            result = cursor.fetchall()
+            cursor.close()
+            return result
+        except Error as err:
+            logger.error(f"Database query error: {err}")
+            return None
 
+    # اجرای کوئری INSERT
+    def execute_insert(self, query, params):
+        try:
+            self.open_connection()
+            cursor = self.connection.cursor()
+            cursor.execute(query, params)
+            self.connection.commit()
+            last_id = cursor.lastrowid
+            cursor.close()
+            return last_id
+        except Error as err:
+            logger.error(f"Database insert error: {err}")
+            return None
+
+# ایجاد یک نمونه از کلاس Database
 db = Database(db_config)
 
-#کلاس ارور ها 
+# کلاس سرویس دانش‌آموز
+class StudentService:
+    @staticmethod
+    def get_all_students():
+        return db.execute_query("SELECT * FROM students")
+
+    @staticmethod
+    def get_student_by_id(student_id):
+        return db.execute_query("SELECT * FROM students WHERE id = %s", (student_id,))
+
+    @staticmethod
+    def add_student(name, lastname, age):
+        return db.execute_insert(
+            "INSERT INTO students (name, lastname, age) VALUES (%s, %s, %s)",
+            (name, lastname, age)
+        )
+
+# کلاس مدیریت خطاها
 class ErrorHandler:
     @staticmethod
     def handle_database_error(err):
@@ -78,31 +120,24 @@ class ErrorHandler:
     def handle_student_not_found():
         return jsonify({'error': 'Student not found'}), 404
 
-# صفحه اصلی
+# مسیر اصلی
 @app.route('/')
 def index():
-    return render_template('index.html')  # بارگذاری قالب HTML
+    return render_template('index.html')
 
-# برای دیدن اطلاعات دانشجو
+# مسیر دریافت همه دانش‌آموزان
 @app.route('/students', methods=['GET'])
 def get_all_students():
     try:
-        connection = db.get_connection()  # دریافت اتصال به پایگاه داده
-        cursor = connection.cursor(dictionary=True)
-        query = "SELECT * FROM students"
-        cursor.execute(query)
-        students = cursor.fetchall()
-        
-        cursor.close()
-        db.close_connection()  # بستن اتصال
-
-        return jsonify(students), 200
-    except mysql.connector.Error as err:
-        return ErrorHandler.handle_database_error(err)
+        students = StudentService.get_all_students()
+        if students is not None:
+            return jsonify(students), 200
+        else:
+            return ErrorHandler.handle_database_error("Failed to fetch students")
     except Exception as e:
         return ErrorHandler.handle_unexpected_error(e)
 
-# جستجو بر اساس ایدی با استفاده از متد POST
+# مسیر دریافت دانش‌آموز با شناسه
 @app.route('/student', methods=['POST'])
 def get_student_by_id():
     student_id = request.form.get('id')
@@ -115,25 +150,15 @@ def get_student_by_id():
         return ErrorHandler.handle_invalid_student_id()
 
     try:
-        connection = db.get_connection()
-        cursor = connection.cursor(dictionary=True)
-        query = "SELECT * FROM students WHERE id = %s"
-        cursor.execute(query, (student_id,))
-        student = cursor.fetchone()
-        
-        cursor.close()
-        db.close_connection()  # بستن اتصال
-
+        student = StudentService.get_student_by_id(student_id)
         if student:
-            return jsonify(student), 200
+            return jsonify(student[0]), 200
         else:
             return ErrorHandler.handle_student_not_found()
-    except mysql.connector.Error as err:
-        return ErrorHandler.handle_database_error(err)
     except Exception as e:
         return ErrorHandler.handle_unexpected_error(e)
 
-# ایجاد دانشجو بر اساس سن و نام و نام خانوادگی همچنین دادن ایدی خودکار با متد POST
+# مسیر اضافه کردن دانش‌آموز جدید
 @app.route('/add_student', methods=['POST'])
 def add_student():
     name = request.form.get('name')
@@ -149,33 +174,18 @@ def add_student():
         return ErrorHandler.handle_invalid_student_id()
 
     try:
-        connection = db.get_connection()
-        cursor = connection.cursor()
-        query = "INSERT INTO students (name, lastname, age) VALUES (%s, %s, %s)"
-        cursor.execute(query, (name, lastname, age))
-        connection.commit()
-        
-        new_id = cursor.lastrowid
-        
-        cursor.close()
-        db.close_connection()  # بستن اتصال
-
-        new_student = {
-            'id': new_id,
-            'name': name,
-            'lastname': lastname,
-            'age': age
-        }
-        return jsonify(new_student), 201
-
-    except mysql.connector.Error as err:
-        return ErrorHandler.handle_database_error(err)
+        new_id = StudentService.add_student(name, lastname, age)
+        if new_id is not None:
+            new_student = {'id': new_id, 'name': name, 'lastname': lastname, 'age': age}
+            return jsonify(new_student), 201
+        else:
+            return ErrorHandler.handle_database_error("Failed to add student")
     except Exception as e:
         return ErrorHandler.handle_unexpected_error(e)
 
 # اجرای برنامه
 if __name__ == '__main__':
-    if db.get_connection():  # بررسی اتصال به پایگاه داده
-        app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))  # اجرای برنامه
+    if db.get_connection():
+        app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
     else:
-        sys.exit(1)  # خروج از برنامه در صورت عدم اتصال
+        sys.exit(1)
