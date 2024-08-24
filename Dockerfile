@@ -1,26 +1,20 @@
-# استفاده از تصویر پایه Python
+# Use an official Python runtime as a parent image
 FROM python:3.9-slim
 
-# تنظیم دایرکتوری کاری
+# Set the working directory in the container
 WORKDIR /app
 
-# کپی کردن requirements.txt
-COPY requirements.txt requirements.txt
+# Copy the current directory contents into the container at /app
+COPY . /app
 
-# نصب وابستگی‌ها
+# Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# کپی کردن فایل‌های پروژه
-COPY . .
+# Install gunicorn
+RUN pip install gunicorn
 
-# ایجاد محیط مجازی
-RUN python -m venv venv
+# Expose port 8000 for gunicorn
+EXPOSE 8000
 
-# فعال کردن محیط مجازی
-ENV PATH="/app/venv/bin:$PATH"
-
-# ایجاد دایرکتوری برای لاگ‌ها
-RUN mkdir -p /app/logs
-
-# اجرای Gunicorn برای سرو کردن اپلیکیشن
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "wsgi:app"]
+# Command to run the application with gunicorn
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "wsgi:app"]
