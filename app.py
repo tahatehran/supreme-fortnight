@@ -43,6 +43,12 @@ class Database:
             logger.error(f"Error connecting to MySQL: {e}")
             self.connection = None
 
+    # متد جدید برای گرفتن اتصال به پایگاه داده
+    def get_connection(self):
+        if self.connection is None or not self.connection.is_connected():
+            self.open_connection()
+        return self.connection
+
     # بستن اتصال پایگاه داده
     def close_connection(self):
         if self.connection and self.connection.is_connected():
@@ -52,8 +58,8 @@ class Database:
     # اجرای کوئری SELECT
     def execute_query(self, query, params=None):
         try:
-            self.open_connection()
-            cursor = self.connection.cursor(dictionary=True)
+            connection = self.get_connection()
+            cursor = connection.cursor(dictionary=True)
             cursor.execute(query, params)
             result = cursor.fetchall()
             cursor.close()
@@ -65,10 +71,10 @@ class Database:
     # اجرای کوئری INSERT
     def execute_insert(self, query, params):
         try:
-            self.open_connection()
-            cursor = self.connection.cursor()
+            connection = self.get_connection()
+            cursor = connection.cursor()
             cursor.execute(query, params)
-            self.connection.commit()
+            connection.commit()
             last_id = cursor.lastrowid
             cursor.close()
             return last_id
