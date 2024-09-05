@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  flask_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: #user name
+      MYSQL_PASSWORD: #password
+      MYSQL_DATABASE: databd
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: #password
+      MYSQL_DATABASE: #name_database
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./db_data:/docker-entrypoint-initdb.d
+    deploy:
+      resources:
+        limits:
+          memory: 600M 
+          cpus: '0.5'
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - flask_app
+
